@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Is it nice out?</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            /* Fill browser window */
+            height: 100vh;
+            margin: 0;
+
+            /* Center children */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-family: 'Open Sans', sans-serif;
+            background-color: {{ nice_out.background_color }};
+        }
+
+        #isitniceout {
+            font-weight: 700;
+            font-size: 50vh;
+            color: {{ nice_out.text_color }};
+        }
+    </style>
+</head>
+
+<body>
+    <div id="isitniceout">{{ nice_out.value }}</div>
+</body>
+</html>

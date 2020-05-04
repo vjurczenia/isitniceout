@@ -2,11 +2,30 @@ import json
 import os
 import requests
 
-from flask import Flask
+from flask import Flask, render_template
 
 
 app = Flask(__name__)
 OPENWEATHERMAP_API_KEY = os.environ.get('OPENWEATHERMAP_API_KEY')
+
+nice_out_dict = {
+    'Yes': {
+        'value': 'Yes',
+        'text_color': '#f0eec9',
+        'background_color': '#7aed70'
+    },
+    'No': {
+        'value': 'No',
+        'text_color': '#6a6475',
+        'background_color': '#ff798b'
+    }
+}
+
+
+# @app.route('/')
+def test():
+    nice_out_key = 'No'
+    return render_template('index.html', nice_out=nice_out_dict[nice_out_key])
 
 
 @app.route('/')
@@ -32,9 +51,10 @@ def isitniceout():
     wind_speed = response_dict['wind']['speed']
     precipitation = ('rain' in response_dict or 'snow' in response_dict)
 
+    nice_out_key = 'No'
     if ((feels_like >= 40 and feels_like <= 82) and 
         (wind_speed < 15) and
         (not precipitation)):
-       return 'Yes'
+       nice_out_key = 'Yes'
 
-    return 'No'
+    return render_template('index.html', nice_out=nice_out_dict[nice_out_key])
