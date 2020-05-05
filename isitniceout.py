@@ -1,19 +1,14 @@
-"""
-Updated the windspeed and temperature limits
-Also added a geolocation pulled from the user's IP.
-"""
-
 import json
 import os
 import requests
 
 from flask_simple_geoip import SimpleGeoIP
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template
 
 
 app = Flask(__name__)
-OPENWEATHERMAP_API_KEY = os.environ.get('OPENWEATHERMAP_API_KEY')
-app.config["GEOIPIFY_API_KEY"] = os.environ.get('GEOIPIFY_API_KEY')
+app.config['OPENWEATHERMAP_API_KEY'] = os.environ.get('OPENWEATHERMAP_API_KEY')
+app.config['GEOIPIFY_API_KEY'] = os.environ.get('GEOIPIFY_API_KEY')
 
 simple_geoip = SimpleGeoIP(app)
 
@@ -30,38 +25,34 @@ nice_out_dict = {
     }
 }
 
-def user_loc():
-    # Retrieve geoip data for the given requester
-    geoip_data = simple_geoip.get_geoip_data()
-    return jsonify(data=geoip_data)
 
-
-#@app.route('/')
+# @app.route('/')
 def test():
-    nice_out_key = 'No'
-    return render_template('index.html', nice_out=nice_out_dict[nice_out_key])
+    nice_out_key = 'Yes'
+    location_dict = 'TEST TEST TEST'
+    return render_template('index.html', nice_out=nice_out_dict[nice_out_key], location_dict=location_dict)
 
 
 @app.route('/')
 @app.route('/isitniceout')
 def isitniceout():
-    """
+    '''
     Use openweathermap API (https://openweathermap.org/current)
     to determine whether it's nice out.
-    """
-    location_dict = user_loc()
+    '''
+    location_dict = simple_geoip.get_geoip_data()['location']
 
-    #location_id = 5110302
+    # location_id = 5110302
     # lat = 35 & lon = 139
-    base_url = 'api.openweathermap.org/data/2.5/weather'
+    base_url = 'https://api.openweathermap.org/data/2.5/weather'
     parameters = (
-        f'appid={OPENWEATHERMAP_API_KEY}'
+        f'appid={app.config["OPENWEATHERMAP_API_KEY"]}'
         f'&lat={location_dict["lat"]}'
         f'&lon={location_dict["lng"]}'
         '&units=imperial'
     )
 
-    response = requests.get(f"{base_url}?{parameters}")
+    response = requests.get(f'{base_url}?{parameters}')
     response_dict = json.loads(response.text)
 
     feels_like = response_dict['main']['feels_like']
@@ -74,4 +65,4 @@ def isitniceout():
         (not precipitation)):
        nice_out_key = 'Yes'
 
-    return render_template('index.html', nice_out=nice_out_dict[nice_out_key])
+    return render_template('index.html', nice_out=nice_out_dict[nice_out_key], location_dict=location_dict)

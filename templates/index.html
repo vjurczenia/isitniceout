@@ -26,10 +26,18 @@
             font-size: 50vmin;
             color: {{ nice_out.text_color }};
         }
+
+        #footer {
+            font-weight: 300;
+            position: absolute;
+            bottom: 0;
+            color: {{ nice_out.text_color + '7d' }};
+        }
     </style>
 </head>
 
 <body>
     <div id="isitniceout">{{ nice_out.value }}</div>
+    <div id="footer">{{ location_dict }}</div>
 </body>
 </html>
