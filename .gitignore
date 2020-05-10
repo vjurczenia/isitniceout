@@ -129,5 +129,6 @@ dmypy.json
 .pyre/
 
 
+.vscode
 environment.sh
 city.list.json

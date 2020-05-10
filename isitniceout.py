@@ -2,15 +2,12 @@ import json
 import os
 import requests
 
-from flask_simple_geoip import SimpleGeoIP
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 
 app = Flask(__name__)
 app.config['OPENWEATHERMAP_API_KEY'] = os.environ.get('OPENWEATHERMAP_API_KEY')
-app.config['GEOIPIFY_API_KEY'] = os.environ.get('GEOIPIFY_API_KEY')
-
-simple_geoip = SimpleGeoIP(app)
+app.config['IPSTACK_API_KEY'] = os.environ.get('IPSTACK_API_KEY')
 
 nice_out_dict = {
     'Yes': {
@@ -26,6 +23,33 @@ nice_out_dict = {
 }
 
 
+def get_response_dict(url):
+    response = requests.get(url)
+    response_dict = json.loads(response.text)
+    return response_dict
+
+
+def get_location_dict(ip_addr):
+    # ip_addr = '8.8.8.8'
+    base_url = 'http://api.ipstack.com/'
+    full_url = f'{base_url}{ip_addr}?access_key={app.config["IPSTACK_API_KEY"]}'
+    return get_response_dict(full_url)
+
+
+def get_weather_dict(latitude, longitude):
+    # latitude = 35 
+    # longitude = 139
+    base_url = 'https://api.openweathermap.org/data/2.5/weather'
+    parameters = (
+        f'appid={app.config["OPENWEATHERMAP_API_KEY"]}'
+        f'&lat={latitude}'
+        f'&lon={longitude}'
+        '&units=imperial'
+    )
+    full_url = f'{base_url}?{parameters}'
+    return get_response_dict(full_url)
+
+
 # @app.route('/')
 def test():
     nice_out_key = 'Yes'
@@ -37,27 +61,24 @@ def test():
 @app.route('/isitniceout')
 def isitniceout():
     '''
-    Use openweathermap API (https://openweathermap.org/current)
+    Use ipstack and openweathermap APIs
     to determine whether it's nice out.
     '''
-    location_dict = simple_geoip.get_geoip_data()['location']
 
-    # location_id = 5110302
-    # lat = 35 & lon = 139
-    base_url = 'https://api.openweathermap.org/data/2.5/weather'
-    parameters = (
-        f'appid={app.config["OPENWEATHERMAP_API_KEY"]}'
-        f'&lat={location_dict["lat"]}'
-        f'&lon={location_dict["lng"]}'
-        '&units=imperial'
-    )
+    # This does not work in prod due to Heroku proxying
+    # Look into werkzeug ProxyFix
+    # This also does not work locally because localhost does not have geoip data
+    ip_addr = request.remote_addr 
+    # ip_addr = '8.8.8.8'
+    location_dict = get_location_dict(ip_addr=ip_addr)
 
-    response = requests.get(f'{base_url}?{parameters}')
-    response_dict = json.loads(response.text)
+    latitude = location_dict['latitude']
+    longitude = location_dict['longitude']
+    weather_dict = get_weather_dict(latitude=latitude, longitude=longitude)
 
-    feels_like = response_dict['main']['feels_like']
-    wind_speed = response_dict['wind']['speed']
-    precipitation = ('rain' in response_dict or 'snow' in response_dict)
+    feels_like = weather_dict['main']['feels_like']
+    wind_speed = weather_dict['wind']['speed']
+    precipitation = ('rain' in weather_dict or 'snow' in weather_dict)
 
     nice_out_key = 'No'
     if ((feels_like >= 60 and feels_like <= 82) and
@@ -65,4 +86,13 @@ def isitniceout():
         (not precipitation)):
        nice_out_key = 'Yes'
 
-    return render_template('index.html', nice_out=nice_out_dict[nice_out_key], location_dict=location_dict)
+    detail_dict = {
+        'ip_addr': ip_addr,
+        'latitude': latitude,
+        'longitude': longitude,
+        'feels_like': feels_like,
+        'wind_speed': wind_speed,
+        'precipitation': precipitation
+    }
+
+    return render_template('index.html', nice_out=nice_out_dict[nice_out_key], detail_dict=detail_dict)
