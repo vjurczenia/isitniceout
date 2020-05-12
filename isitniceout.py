@@ -65,10 +65,8 @@ def isitniceout():
     to determine whether it's nice out.
     '''
 
-    # This does not work in prod due to Heroku proxying
-    # Look into werkzeug ProxyFix
-    # This also does not work locally because localhost does not have geoip data
-    ip_addr = request.remote_addr 
+    # This does not work locally because localhost does not have geoip data
+    ip_addr = request.access_route[-1] 
     # ip_addr = '8.8.8.8'
     location_dict = get_location_dict(ip_addr=ip_addr)
 
